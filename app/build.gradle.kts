@@ -1,59 +1,59 @@
-plugins {
-    alias(libs.plugins.android.application)
-    id("com.google.gms.google-services")
-}
-
-android {
-    namespace = "com.example.gymstats"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+plugins { alias(libs.plugins.android.application) }
+val configFile = file("google-services.json")
+if (configFile.exists()) apply(plugin = "com.google.gms.google-services")
+val appId = providers.gradleProperty("gymstats.applicationId").getOrElse("org.gymstats.android")
+val googleClientId = if (configFile.exists()) {
+    val config = groovy.json.JsonSlurper().parse(configFile) as Map<*, *>
+    val clients = config["client"] as? List<*> ?: emptyList<Any>()
+    val client = clients.filterIsInstance<Map<*, *>>().firstOrNull {
+        val info = it["client_info"] as? Map<*, *>
+        val android = info?.get("android_client_info") as? Map<*, *>
+        android?.get("package_name") == appId
     }
-
+    val oauth = client?.get("oauth_client") as? List<*> ?: emptyList<Any>()
+    oauth.filterIsInstance<Map<*, *>>().firstOrNull { (it["client_type"] as? Number)?.toInt() == 3 }?.get("client_id") as? String ?: ""
+} else ""
+android {
+    namespace = "org.gymstats.android"
+    compileSdk = 36
     defaultConfig {
-        applicationId = "com.example.gymstats"
-        minSdk = 24
+        applicationId = appId
+        minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
-
+        versionCode = 2
+        versionName = "2.0.0"
+        resValue("string", "google_web_client_id", googleClientId)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
-    buildTypes {
-        release {
-            optimization {
-                enable = false
-            }
-        }
+    buildFeatures {
+        viewBinding = true
+        resValues = true
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    testOptions { unitTests.isReturnDefaultValues = true }
 }
-
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:34.14.0"))
-    implementation(libs.androidx.activity.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.core.ktx)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.core.ktx)
+    implementation(libs.appcompat)
     implementation(libs.material)
-    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.activity.ktx)
+    implementation(libs.fragment.ktx)
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
+    implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.lifecycle.viewmodel.savedstate)
+    implementation(libs.recyclerview)
+    implementation(libs.coroutines.play.services)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.credential.manager)
+    implementation(libs.credential.google.provider)
+    implementation(libs.googleid)
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    testImplementation(libs.coroutines.test)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.espresso.core)
 }

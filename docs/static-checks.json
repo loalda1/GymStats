@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "XML bien formado: 32 archivos",
+    "Paridad de recursos ES/EN: 92 claves",
+    "Referencias locales de strings, IDs, layouts y drawables",
+    "Paquetes Kotlin alineados con sus rutas",
+    "Destinos Navigation con clases presentes",
+    "Clases ViewBinding con sus layouts",
+    "JSON y TOML válidos; dependencias con alias existentes",
+    "Sin imports del paquete anterior, findViewById ni notifyDataSetChanged"
+  ],
+  "errors": [],
+  "kotlin_files": 16,
+  "unit_tests_authored": 23,
+  "instrumentation_tests_authored": 2,
+  "rules_tests_authored": 17
+}

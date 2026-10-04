@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+    function short(s, maximum) { return s is string && s.size() > 0 && s.size() <= maximum; }
+    function exercise(e) {
+      let count = e.sets;
+      let reps = e.reps;
+      let weight = e.weight;
+      return e.keys().hasOnly(['id', 'name', 'sets', 'reps', 'weight'])
+        && e.id.matches('.{1,80}') && e.name.matches('.{1,80}')
+        && count is int && count >= 1 && count <= 10
+        && reps is int && reps >= 1 && reps <= 100
+        && weight >= 0 && weight <= 1000;
+    }
+    function workoutSet(s) {
+      let reps = s.reps;
+      let weight = s.weight;
+      return s.keys().hasOnly(['exerciseId', 'exerciseName', 'reps', 'weight'])
+        && s.exerciseId.matches('.{1,80}') && s.exerciseName.matches('.{1,80}')
+        && reps is int && reps >= 1 && reps <= 100
+        && weight >= 0 && weight <= 1000;
+    }
+    function exercises(items) {
+      return items is list && items.size() >= 1 && items.size() <= 6
+        && exercise(items[0])
+        && (items.size() <= 1 || exercise(items[1]))
+        && (items.size() <= 2 || exercise(items[2]))
+        && (items.size() <= 3 || exercise(items[3]))
+        && (items.size() <= 4 || exercise(items[4]))
+        && (items.size() <= 5 || exercise(items[5]));
+    }
+    function sets(items) {
+      return items is list && items.size() >= 1 && items.size() <= 5
+        && workoutSet(items[0])
+        && (items.size() < 2 || workoutSet(items[1]))
+        && (items.size() < 3 || workoutSet(items[2]))
+        && (items.size() < 4 || workoutSet(items[3]))
+        && (items.size() < 5 || workoutSet(items[4]));
+    }
+    function total(items, i) { return items.size() > i ? items[i].sets : 0; }
+    function routine(d, id) {
+      return d.keys().hasOnly(['id', 'name', 'description', 'dayOfWeek', 'createdAt', 'exercises'])
+        && d.id == id && short(d.id, 80) && short(d.name, 80)
+        && d.description is string && d.description.size() <= 500
+        && d.dayOfWeek is string && d.dayOfWeek.size() <= 40
+        && d.createdAt is int && d.createdAt > 0 && d.createdAt <= request.time.toMillis()
+        && exercises(d.exercises)
+        && total(d.exercises, 0) + total(d.exercises, 1) + total(d.exercises, 2) + total(d.exercises, 3) + total(d.exercises, 4) + total(d.exercises, 5) <= 20;
+    }
+    function chunkSize(uid, id, n) {
+      return getAfter(/databases/$(database)/documents/users/$(uid)/workouts/$(id)/chunks/$(n)).data.sets.size();
+    }
+    function workout(d, uid, id) {
+      return d.keys().hasOnly(['id', 'routineId', 'routineName', 'startedAt', 'completedAt', 'setCount', 'chunkCount'])
+        && d.id == id && short(d.id, 80) && short(d.routineId, 80) && short(d.routineName, 80)
+        && d.startedAt is int && d.completedAt is int
+        && d.startedAt > 0 && d.completedAt >= d.startedAt && d.completedAt <= request.time.toMillis()
+        && d.chunkCount is int && d.chunkCount >= 1 && d.chunkCount <= 4
+        && d.setCount is int && d.setCount >= 1 && d.setCount <= 20
+        && d.setCount == chunkSize(uid, id, '0')
+          + (d.chunkCount >= 2 ? chunkSize(uid, id, '1') : 0)
+          + (d.chunkCount >= 3 ? chunkSize(uid, id, '2') : 0)
+          + (d.chunkCount >= 4 ? chunkSize(uid, id, '3') : 0);
+    }
+    match /users/{uid}/routines/{id} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid) && routine(request.resource.data, id);
+      allow update: if owner(uid) && request.resource.data.createdAt == resource.data.createdAt && routine(request.resource.data, id);
+    }
+    match /users/{uid}/workouts/{id} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid) && workout(request.resource.data, uid, id);
+      allow update: if owner(uid) && request.resource.data == resource.data;
+      match /chunks/{chunkId} {
+        function parentPath() { return /databases/$(database)/documents/users/$(uid)/workouts/$(id); }
+        allow read: if owner(uid) && exists(parentPath());
+        allow create: if owner(uid) && !exists(parentPath()) && existsAfter(parentPath())
+          && chunkId in ['0', '1', '2', '3'] && int(chunkId) < getAfter(parentPath()).data.chunkCount
+          && request.resource.data.keys().hasOnly(['sets']) && sets(request.resource.data.sets);
+        allow update: if owner(uid) && request.resource.data == resource.data;
+        allow delete: if owner(uid) && !existsAfter(parentPath());
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

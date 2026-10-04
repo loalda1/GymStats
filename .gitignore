@@ -1,28 +1,13 @@
-# Local Android Studio and Gradle files
-.idea/
 *.iml
 .gradle/
 .kotlin/
-**/build/
+.idea/
 local.properties
-captures/
-.externalNativeBuild/
-.cxx/
-
-# Firebase configuration (including duplicate downloads)
-**/google-services*.json
-
-# Credentials and signing files
-.env
-.env.*
-!.env.example
+**/build/
+private-config/
+app/google-services*.json
 *.jks
 *.keystore
-keystore.properties
-**/service-account*.json
-**/serviceAccount*.json
-
-# Operating system files
-.DS_Store
-Thumbs.db
-Desktop.ini
+node_modules/
+.firebase/
+*-debug.log

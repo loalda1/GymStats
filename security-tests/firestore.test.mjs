@@ -1,0 +1,37 @@
+import {readFileSync} from 'node:fs';
+import {before,after,beforeEach,test} from 'node:test';
+import {initializeTestEnvironment,assertFails,assertSucceeds} from '@firebase/rules-unit-testing';
+import {doc,getDoc,getDocs,collection,setDoc,deleteDoc,updateDoc,writeBatch} from 'firebase/firestore';
+let env;
+before(async()=>{env=await initializeTestEnvironment({projectId:'demo-gymstats',firestore:{rules:readFileSync('firestore.rules','utf8'),host:'127.0.0.1',port:8080}});});
+after(async()=>{await env.cleanup();});
+beforeEach(async()=>{await env.clearFirestore();});
+const routine=()=>({id:'r1',name:'Upper',description:'',dayOfWeek:'Monday',createdAt:Date.now()-1000,exercises:[{id:'e1',name:'Bench',sets:3,reps:8,weight:50}]});
+const workout=()=>({id:'w1',routineId:'r1',routineName:'Upper',startedAt:Date.now()-10000,completedAt:Date.now()-1000,sets:[{exerciseId:'e1',exerciseName:'Bench',reps:8,weight:50}]});
+const db=(uid)=>uid?env.authenticatedContext(uid).firestore():env.unauthenticatedContext().firestore();
+const ref=(d,kind='routines',id='r1')=>doc(d,`users/alice/${kind}/${id}`);
+async function saveWorkout(d,w) {
+ const b=writeBatch(d),chunks=[];
+ for(let i=0;i<w.sets.length;i+=5)chunks.push(w.sets.slice(i,i+5));
+ const {sets,...metadata}=w,r=ref(d,'workouts',w.id);
+ b.set(r,{...metadata,setCount:sets.length,chunkCount:chunks.length});
+ chunks.forEach((sets,i)=>b.set(doc(r,'chunks',String(i)),{sets}));
+ return b.commit();
+}
+test('owner CRUD works',async()=>{const d=db('alice');await assertSucceeds(setDoc(ref(d),routine()));await assertSucceeds(getDoc(ref(d)));await assertSucceeds(getDocs(collection(d,'users/alice/routines')));await assertSucceeds(updateDoc(ref(d),{name:'Push'}));await assertSucceeds(deleteDoc(ref(d)));});
+test('unauthenticated reads and writes denied',async()=>{await assertFails(getDoc(ref(db())));await assertFails(setDoc(ref(db()),routine()));});
+test('cross-user read list update delete denied',async()=>{await setDoc(ref(db('alice')),routine());const d=db('bob');await assertFails(getDoc(ref(d)));await assertFails(getDocs(collection(d,'users/alice/routines')));await assertFails(updateDoc(ref(d),{name:'bad'}));await assertFails(deleteDoc(ref(d)));});
+test('empty name and unknown fields denied',async()=>{await assertFails(setDoc(ref(db('alice')),{...routine(),name:''}));await assertFails(setDoc(ref(db('alice')),{...routine(),admin:true}));});
+test('negative weights wrong types and nested unknown fields denied',async()=>{for(const bad of [{weight:-1},{weight:'50'},{reps:'8'},{admin:true}]){const r=routine();r.exercises[0]={...r.exercises[0],...bad};await assertFails(setDoc(ref(db('alice')),r));}});
+test('over 20 planned sets denied',async()=>{const r=routine();r.exercises=Array.from({length:3},(_,i)=>({...r.exercises[0],id:`e${i}`,sets:10}));await assertFails(setDoc(ref(db('alice')),r));});
+test('createdAt immutable and future dates denied',async()=>{const d=db('alice');await setDoc(ref(d),routine());await assertFails(updateDoc(ref(d),{createdAt:1}));await assertFails(setDoc(ref(d),{...routine(),createdAt:Date.now()+86400000}));});
+test('workout immutable and identical batch retry allowed',async()=>{const d=db('alice'),w=workout();await assertSucceeds(saveWorkout(d,w));await assertSucceeds(saveWorkout(d,w));await assertFails(updateDoc(ref(d,'workouts','w1'),{routineName:'Changed'}));});
+test('20 sets succeed and invalid final set is rejected',async()=>{const w=workout();w.sets=Array.from({length:20},()=>({...w.sets[0]}));await assertSucceeds(saveWorkout(db('alice'),w));w.id='w2';w.sets[19].weight=-1;await assertFails(saveWorkout(db('alice'),w));});
+test('invalid times mismatched ids and excessive sets denied',async()=>{const d=db('alice');await assertFails(saveWorkout(d,{...workout(),startedAt:Date.now()+100000}));await assertFails(setDoc(ref(d,'workouts','w1'),{id:'other',routineId:'r1',routineName:'Upper',startedAt:1,completedAt:2,setCount:1,chunkCount:1}));const w=workout();w.sets=Array.from({length:21},()=>({...w.sets[0]}));await assertFails(saveWorkout(d,w));});
+test('cross-user session access denied',async()=>{await assertFails(saveWorkout(db('bob'),workout()));await assertFails(getDoc(ref(db('bob'),'workouts','w1')));});
+test('unexpected collections denied',async()=>{await assertFails(setDoc(doc(db('alice'),'users/alice/private/item'),{value:1}));});
+test('metadata without chunks denied',async()=>{const {sets,...w}=workout();await assertFails(setDoc(ref(db('alice'),'workouts','w1'),{...w,setCount:1,chunkCount:1}));});
+test('chunks immutable and private',async()=>{const d=db('alice');await saveWorkout(d,workout());const c=doc(d,'users/alice/workouts/w1/chunks/0');await assertFails(updateDoc(c,{sets:[]}));await assertFails(deleteDoc(c));await assertFails(getDoc(doc(db('bob'),'users/alice/workouts/w1/chunks/0')));});
+test('maximum routine capacity accepted',async()=>{const r=routine();r.exercises=Array.from({length:6},(_,i)=>({...r.exercises[0],id:`e${i}`,sets:2}));await assertSucceeds(setDoc(ref(db('alice')),r));});
+test('session deletion removes parent and chunks atomically',async()=>{const d=db('alice');await saveWorkout(d,workout());const b=writeBatch(d);b.delete(ref(d,'workouts','w1'));b.delete(doc(d,'users/alice/workouts/w1/chunks/0'));await assertSucceeds(b.commit());});
+test('invalid final routine exercise denied',async()=>{const r=routine();r.exercises=Array.from({length:6},(_,i)=>({...r.exercises[0],id:`e${i}`,sets:2}));r.exercises[5].reps=0;await assertFails(setDoc(ref(db('alice')),r));});

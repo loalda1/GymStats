@@ -1,7 +1,1 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.GymStats" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
-    </style>
-</resources>
+<resources><style name="Theme.GymStats" parent="Theme.Material3.DayNight.NoActionBar"><item name="colorPrimary">@color/brand_dark</item><item name="colorSecondary">@color/brand_dark</item><item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">false</item></style></resources>

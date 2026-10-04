@@ -1,217 +1,124 @@
-# GymStats · Organiza tu entrenamiento 💪📱
+# GymStats
 
-![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white)
-![Android](https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white)
-![Firebase](https://img.shields.io/badge/Firebase-Authentication_%26_Firestore-DD2C00?logo=firebase&logoColor=white)
-![Arquitectura](https://img.shields.io/badge/Arquitectura-MVVM-1565C0)
-![Versión](https://img.shields.io/badge/Versión-1.0-2563EB)
+An Android training journal built with Kotlin, Material 3 and Firebase. Create routines, record the repetitions and load you actually complete, and follow your workout history and progress.
 
-**Tus rutinas, tu cuenta y tu planificación en una aplicación Android.**
+Original academic project by **David López Alcañiz, Pablo Rios Garrido and Manuel Magaz Cárdenas**, extended with workout tracking, a redesigned UI and a stronger data layer.
 
-GymStats es una aplicación nativa desarrollada en **Kotlin** para organizar rutinas de gimnasio. Permite crear una cuenta, guardar entrenamientos asociados a un día de la semana y gestionar las rutinas desde una interfaz móvil en español.
+> **Verification status:** this delivery is a reconstructed source project. Static consistency checks passed; its Gradle build, unit/security/UI tests and connected Firebase flows still need execution. See [VERIFICATION.md](docs/VERIFICATION.md). Results from the interrupted earlier version are not evidence for this ZIP.
 
-Desarrollada de forma individual como proyecto académico de **Programación Móvil**, combina autenticación con Firebase, persistencia en Cloud Firestore y una estructura basada en Fragments, ViewModel y Repository.
+## Features implemented in source
 
-Esta documentación corresponde a la **versión inicial 1.0**, el punto de partida del proyecto en GitHub.
+- Email/password authentication, password reset and Google sign-in through Credential Manager.
+- Explicit demo with sample data, isolated from Firebase and reset on sign-out or process termination.
+- Routine CRUD: 1–6 exercises, target sets/repetitions/load, up to 20 planned sets.
+- Workout sessions: record actual repetitions and weight per set, rest timer, rotation-safe drafts.
+- Completed-session snapshots: modifying or deleting a routine keeps historical names and sets unchanged.
+- Weekly/monthly training counts, daily training streak, seven-week volume chart and per-exercise maximum-load progress.
+- Material 3 cards and inputs, FAB, bottom navigation, custom adaptive icon, empty/loading/error states and retry.
+- English/Spanish and system/light/dark appearance.
+- Per-account day/time reminders, WorkManager, contextual notification permission and cancellation on sign-out.
+- User-scoped Firestore paths, server-side nested validation and atomic session writes.
 
-## ✨ Características
+## Open and run
 
-- 🔐 **Registro e inicio de sesión** — Acceso mediante correo y contraseña con Firebase Authentication.
-- 🌐 **Acceso con Google** — Inicio de sesión con una cuenta de Google integrada con Firebase.
-- 📝 **Creación de rutinas** — Nombre, descripción opcional y día de la semana.
-- 📋 **Listado personal** — Consulta de las rutinas del usuario mediante RecyclerView.
-- ✏️ **Edición de rutinas** — Carga de los datos existentes y actualización desde el formulario de gestión.
-- 🗑️ **Eliminación de rutinas** — Borrado desde el listado y actualización de los datos mostrados.
-- ☁️ **Persistencia en Firestore** — Almacenamiento bajo la cuenta del usuario autenticado.
-- 📊 **Contador de rutinas** — Visualización del número de rutinas cargadas en la pantalla principal.
-- 🔔 **Recordatorio de prueba** — Activación manual de una notificación mediante WorkManager, con una demora inicial de 10 segundos.
-- ✅ **Validación de formularios** — Comprobación de campos obligatorios y longitud mínima de la contraseña al registrarse.
-- 💬 **Mensajes de resultado** — Avisos sobre operaciones completadas y errores mediante Toast.
-- 👤 **Identificación y cierre de sesión** — Visualización del correo de la cuenta y salida mediante Firebase Authentication.
-
-## 🛠️ Tecnologías
-
-| Tecnología | Uso en el proyecto |
-| --- | --- |
-| **Kotlin** | Lógica de la aplicación Android. |
-| **XML y componentes Material** | Diseño de pantallas, formularios y controles. |
-| **Fragments y Navigation Component** | Navegación entre acceso, registro, inicio y gestión de rutinas. |
-| **ViewModel y LiveData** | Gestión y observación de los datos de las rutinas. |
-| **RecyclerView** | Presentación del listado y acciones sobre cada rutina. |
-| **Firebase Authentication** | Registro, acceso con correo, acceso con Google y cierre de sesión. |
-| **Cloud Firestore** | Creación, consulta, actualización y eliminación de rutinas. |
-| **WorkManager** | Ejecución diferida del recordatorio de entrenamiento. |
-| **Gradle Kotlin DSL** | Configuración de compilación y dependencias. |
-
-## 🏗️ Estructura del proyecto
-
-Las rutas parten de la carpeta que contiene `settings.gradle.kts`. Los archivos Kotlin se encuentran dentro de `app/src/main/java/`.
-
-| Ruta | Descripción |
-| --- | --- |
-| `app/build.gradle.kts` | Configuración Android, versión y dependencias. |
-| `app/src/main/AndroidManifest.xml` | Actividad principal y permisos de Internet y notificaciones. |
-| `app/src/main/java/com/example/gymstats/MainActivity.kt` | Toolbar, navegación y solicitud del permiso de notificaciones. |
-| `app/src/main/java/model/Routine.kt` | Modelo de datos de una rutina. |
-| `app/src/main/java/repository/RoutineRepository.kt` | Acceso a Firestore y operaciones sobre rutinas. |
-| `app/src/main/java/viewmodel/RoutineViewModel.kt` | Datos observables y coordinación con el repositorio. |
-| `app/src/main/java/ui/auth/` | Pantallas de inicio de sesión y registro. |
-| `app/src/main/java/ui/home/HomeFragment.kt` | Listado, contador, cierre de sesión y activación del recordatorio. |
-| `app/src/main/java/ui/routine/` | Formulario de creación y edición, y adaptador del listado. |
-| `app/src/main/java/com/example/gymstats/worker/WorkoutReminderWorker.kt` | Canal y notificación del recordatorio. |
-| `app/src/main/res/layout/` | Diseños XML de pantallas y elementos del listado. |
-| `app/src/main/res/navigation/nav_graph.xml` | Destinos y acciones de navegación. |
-| `gradle/libs.versions.toml` | Catálogo de versiones, bibliotecas y plugins. |
-| `docs/FIREBASE_SETUP.md` | Guía de configuración de Firebase. |
-| `.gitignore` | Exclusión de archivos locales, configuración Firebase y archivos de firma. |
-
-### Organización del código
-
-La gestión de rutinas sigue una estructura **MVVM con Repository**:
-
-- **Vista:** los Fragments recogen las acciones del usuario y observan los cambios mediante LiveData.
-- **ViewModel:** `RoutineViewModel` expone las rutinas, la rutina seleccionada y los mensajes de resultado.
-- **Repositorio:** `RoutineRepository` obtiene el usuario autenticado y realiza las operaciones en Firestore.
-- **Modelo:** `Routine` representa los datos de cada entrenamiento.
-
-Las pantallas de autenticación utilizan Firebase Authentication directamente. El recordatorio se ejecuta en un Worker independiente.
-
-## 🚀 Inicio rápido
-
-### Requisitos
-
-- Android Studio compatible con **Android Gradle Plugin 9.2.1**.
-- SDK de compilación **Android 36.1**, tal como está configurado en el proyecto.
-- JDK compatible con Gradle y el plugin Android; la configuración incluida del daemon indica **Java 21**.
-- Dispositivo o emulador con **Android 7.0 / API 24 o superior**.
-- Un proyecto Firebase con Authentication y Cloud Firestore configurados.
-
-El repositorio incluye el wrapper de **Gradle 9.4.1**. El objetivo Java del código es **11**, distinto del JDK utilizado para ejecutar Gradle.
-
-### Instalación
-
-1. **Clona o descarga el repositorio.** Abre en Android Studio la carpeta que contiene `settings.gradle.kts`, `build.gradle.kts` y `app/`.
-2. **Registra la aplicación en Firebase** con el identificador `com.example.gymstats`.
-3. **Añade la configuración de Firebase** descargada para tu proyecto en `app/google-services.json`.
-4. **Habilita Correo/contraseña y Google** en Firebase Authentication. Para Google, registra las huellas del certificado de desarrollo y descarga de nuevo el JSON actualizado.
-5. **Crea Cloud Firestore y configura sus reglas de acceso** para que cada usuario autenticado pueda acceder únicamente a sus propias rutinas.
-6. **Sincroniza Gradle**, instala los componentes de SDK solicitados y selecciona un dispositivo compatible.
-7. **Ejecuta el módulo `app`** desde Android Studio.
-
-Puedes consultar las huellas del certificado desde la raíz del proyecto:
+Use Android Studio supporting AGP 9.2, JDK 17, SDK platform/build tools 36 and Android 8.0+ (API 26). The included wrapper uses Gradle 9.4.1. No Kotlin Android plugin is added because AGP 9 includes Kotlin support.
 
 ```sh
-# Linux / macOS
-sh gradlew signingReport
+./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
 ```
 
-```powershell
-# Windows PowerShell
-.\gradlew.bat signingReport
+Open the `GymStats` directory in Android Studio, sync and run `app`. Select **Explore demo** to review the UI without cloud configuration. No Firebase JSON is active by default; account sign-in explains that configuration is required. Demo sample data is visibly marked and memory-only.
+
+Windows: use `gradlew.bat` instead of `./gradlew`.
+
+## Firebase setup
+
+The namespace and default application ID are **org.gymstats.android**. Register this Android app in your existing Firebase project, configure Email/Password and Google providers, add signing fingerprints and place its freshly downloaded configuration in `app/google-services.json`.
+
+Your original JSON is preserved in `private-config/google-services.json` for your convenience and excluded from Git. It belongs to the old Android application ID; copying it into the new app without changing the application ID will fail Google services processing. [Setup and compatibility instructions](docs/FIREBASE_SETUP.md) include a temporary legacy option.
+
+Nothing in this delivery deploys to your Firebase account. Review and test the rules, then deploy to the project you choose:
+
+```sh
+npx firebase-tools deploy --only firestore:rules,firestore:indexes --project YOUR_PROJECT_ID
 ```
 
-Consulta [la guía de configuración de Firebase](docs/FIREBASE_SETUP.md) para ampliar estos pasos. Esta versión necesita la configuración de Firebase para compilar y utilizar sus servicios.
+## Architecture
 
-## 📖 Cómo funciona
+```mermaid
+flowchart TD
+    UI[Activity and Fragments] --> VM[TrainingViewModel]
+    VM --> Repository[TrainingRepository interface]
+    Repository --> Cloud[Firestore repository]
+    Repository --> Demo[Demo repository]
+    Cloud --> Store[User-scoped Firestore]
+    UI --> Auth[AuthRepository]
+    Auth --> Accounts[Firebase Authentication]
+    UI --> Scheduler[ReminderScheduler]
+    Scheduler --> Worker[WorkManager]
+```
 
-### Flujo de uso
+- `domain/`: Kotlin models, validation, metrics and local-time scheduling; no Android UI dependencies.
+- `data/`: repository interface, Firebase adapters, listeners, coroutines and atomic batches; separate explicit demo.
+- `ui/`: lifecycle-aware StateFlow, typed result events, ViewBinding cleanup, ListAdapter/DiffUtil, saved drafts and chart rendering.
+- `worker/`: unique per-user work, persisted preferences and authorization checks before notification delivery.
 
-1. **Crea una cuenta o inicia sesión** con correo y contraseña, o accede con Google.
-2. **Consulta la pantalla principal**, donde aparecen tu correo, las rutinas guardadas y su contador.
-3. **Añade una rutina** indicando nombre y día; puedes incluir una descripción.
-4. **Edita o elimina una rutina** desde las acciones de su tarjeta en el listado.
-5. **Activa el recordatorio** para probar la notificación de entrenamiento.
-6. **Cierra sesión** desde la pantalla principal.
+The ViewModel accepts a repository through `connect`; the Activity owns the current authenticated/demo session. This is a small MVVM application with a repository boundary, not a claim of full Clean Architecture or a DI framework.
 
-### Modelo de datos
-
-Cada rutina se almacena en la siguiente ruta de Cloud Firestore:
+## Data model
 
 ```text
 users/{uid}/routines/{routineId}
+users/{uid}/workouts/{workoutId}
+users/{uid}/workouts/{workoutId}/chunks/{0..3}
 ```
 
-| Campo | Tipo | Descripción |
-| --- | --- | --- |
-| `id` | `String` | Identificador del documento de la rutina. |
-| `name` | `String` | Nombre de la rutina. Obligatorio en el formulario. |
-| `description` | `String` | Descripción opcional del entrenamiento. |
-| `dayOfWeek` | `String` | Día indicado por el usuario como texto libre. Obligatorio en el formulario. |
-| `createdAt` | `Long` | Marca temporal de creación, en milisegundos. |
+A completed session contains stable metadata, a set count and a chunk count. Its actual sets are saved in 1–4 chunks of at most five sets. Parent and chunks are committed in one batch. Rules validate every chunk, require the parent and chunks together, verify counts and allow only identical retries after creation. This keeps nested validation within Firestore's expression budget. Workout deletion removes its parent and chunks in a batch; deleting a routine preserves completed sessions.
 
-El repositorio utiliza el UID de Firebase Authentication para seleccionar la colección del usuario. Las reglas de Firestore deben aplicar la restricción de acceso también en el servidor.
+Existing routines without `exercises` still load. Edit them to add exercises before starting a workout; the app does not invent a migration or overwrite your previous data automatically.
 
-### Recordatorio de entrenamiento
+## Metric definitions
 
-El botón de recordatorio encola un trabajo no periódico de WorkManager con una demora inicial de **10 segundos**. El Worker muestra una notificación con el mensaje «Recuerda revisar tus rutinas de entrenamiento».
+- External-load volume = sum of actual `reps × weight`, in kg. Bodyweight sets recorded at 0 kg contribute 0 kg.
+- Calendar weeks start Monday; week/month boundaries use the device's local time zone.
+- Streak counts consecutive calendar days with workouts, including a streak ending yesterday. Multiple sessions in a day contribute one streak day.
+- Progress groups exercise names case-insensitively and plots the maximum set weight per workout. Renaming an exercise starts another named history; stored snapshots keep the old name.
+- Volume shows seven calendar weeks; progress displays the latest 30 workouts containing the selected exercise.
 
-La ejecución depende de la planificación del sistema y puede producirse más tarde que la demora indicada. En Android 13 o superior se solicita el permiso de notificaciones; si se rechaza, el Worker no muestra el aviso.
+## Tests and CI
 
-## 📱 Pantallas principales
-
-| Pantalla | Función |
-| --- | --- |
-| **Inicio de sesión** | Acceso con correo y contraseña o Google, y enlace al registro. |
-| **Registro** | Creación de una cuenta con correo y contraseña de al menos seis caracteres. |
-| **Inicio** | Listado de rutinas, contador, correo del usuario, recordatorio y cierre de sesión. |
-| **Añadir / editar rutina** | Formulario compartido para guardar nuevas rutinas o actualizar las existentes. |
-
-## 🎯 Alcance de la versión 1.0
-
-La primera versión se centra en la **autenticación y gestión personal de rutinas**. El contador resume cuántas rutinas hay guardadas y el recordatorio permite demostrar el uso de tareas diferidas y notificaciones.
-
-Esta versión no incorpora seguimiento de ejercicios, series, repeticiones o pesos, gráficos de progreso ni programación de recordatorios recurrentes. El día de entrenamiento se introduce como texto libre. Las mejoras del proyecto se documentarán en sus correspondientes versiones.
-
-## 🧪 Desarrollo y pruebas
-
-El proyecto incluye las pruebas de ejemplo de JUnit y Android instrumentado generadas con la estructura inicial. No incluyen una suite específica para validar la autenticación o la gestión de rutinas.
-
-Con Firebase y el entorno Android configurados, puedes compilar y ejecutar las pruebas locales desde la raíz:
+23 unit tests, 17 Firestore Rules tests and 2 Espresso tests are included. They are **authored, not executed against this reconstructed version**.
 
 ```sh
-# Linux / macOS
-sh gradlew assembleDebug testDebugUnitTest
+# Build, JVM tests and lint
+./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+# Running Android device/emulator
+./gradlew connectedDebugAndroidTest
+# Node 22 and Java 17
+npm install --ignore-scripts --no-audit --no-fund
+npm run test:rules
+# Source/resource consistency only
+python3 tools/verify_static.py
 ```
 
-```powershell
-# Windows PowerShell
-.\gradlew.bat assembleDebug testDebugUnitTest
-```
+The security suite uses a local `demo-gymstats` emulator project and does not modify a real Firebase project. CI runs build/unit/lint checks and emulator-based rules tests; it compiles the Espresso APK but does not execute UI tests on a device. Generate and commit `package-lock.json` after installing dependencies if you want fully locked transitive Node dependencies, then switch CI to `npm ci`.
 
-Para las pruebas instrumentadas, conecta un dispositivo o inicia un emulador y ejecuta `connectedDebugAndroidTest` con el wrapper de Gradle.
+## Screenshots
 
-## 🐛 Resolución de problemas
+Real screenshots are pending device execution. No mockup is presented as a running app. Follow [manual QA](docs/MANUAL_QA.md) and use `tools/capture_screenshot.sh` while each screen is visible. The README should be illustrated with real screenshots before publishing the project as a portfolio piece.
 
-### Falta `google-services.json`
+## Practical limits
 
-Coloca el archivo de tu aplicación Firebase en `app/google-services.json` y vuelve a sincronizar Gradle. El archivo no se distribuye en el repositorio.
+- WorkManager reminders are approximate, can arrive late and require enabled Android permissions/channels. They use local time and are disabled in demo mode.
+- Firestore can display cached data offline. Save remains visibly pending until acknowledgement from the server. The editor/session cannot be left using Back during a pending save.
+- Drafts survive normal rotation and saved-state restoration; they are not a durable backup after force-stop, clearing data or arbitrary process loss. Demo data is transient.
+- Immutable workout chunks are fetched when parent collection snapshots change. Large histories should add paging and selective queries before production-scale use.
+- Duplicate exercise IDs are rejected by client validation; rules bound and validate their fields but do not enforce pairwise ID uniqueness.
+- App Check, account deletion/export, email-verification policy, publishing/signing and store distribution remain future production work.
 
-### El acceso con Google falla
+## References
 
-Comprueba el identificador de aplicación, el proveedor Google y las huellas del certificado de desarrollo. Utiliza el JSON actualizado: el plugin Google Services genera `default_web_client_id` a partir del cliente OAuth web de esa configuración.
-
-### No se cargan o guardan las rutinas
-
-Comprueba la sesión, la conectividad y la configuración de Cloud Firestore. Las reglas deben permitir las operaciones del usuario autenticado sobre `users/{uid}/routines`.
-
-### No aparece la notificación
-
-Comprueba los permisos de notificaciones y la configuración del canal de GymStats. WorkManager puede ejecutar el trabajo después de los 10 segundos de demora inicial según las condiciones del sistema.
-
-## 🔐 Configuración local
-
-El archivo `.gitignore` excluye la configuración de Firebase, `local.properties`, directorios de compilación, configuraciones locales y archivos de firma. Configura tu propio proyecto Firebase y mantén fuera del repositorio las claves privadas y credenciales de firma.
-
-## 👤 Autoría
-
-Proyecto diseñado y desarrollado **de forma individual por el autor de este repositorio**, en el contexto de la asignatura **Programación Móvil**.
-
-GymStats reúne el trabajo de interfaz, navegación, autenticación, persistencia y tareas en segundo plano en una primera aplicación Android de gestión de rutinas.
-
-## 📄 Licencia
-
-Esta versión no incluye un archivo `LICENSE` ni declara una licencia de uso.
-
----
-
-**Organiza tus rutinas. Construye tu constancia. 💪**
+- [AGP 9.2 compatibility](https://developer.android.com/build/releases/agp-9-2-0-release-notes)
+- [Google sign-in and Credential Manager](https://developer.android.com/identity/sign-in/credential-manager-siwg)
+- [Firestore field validation](https://firebase.google.com/docs/firestore/security/rules-fields)
+- [WorkManager](https://developer.android.com/develop/background-work/background-tasks/persistent-work)
