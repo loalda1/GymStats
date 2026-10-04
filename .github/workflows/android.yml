@@ -11,7 +11,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
       - run: python3 tools/verify_static.py
       - run: chmod +x gradlew
